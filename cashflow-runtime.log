@@ -1,0 +1,46 @@
+
+> cashflow@5.0.0 dev
+> next dev -p 3009
+
+  ▲ Next.js 14.2.5 (turbo)
+  - Local:        http://localhost:3009
+
+ ✓ Starting...
+ ✓ Ready in 1394ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4s
+ GET / 200 in 5172ms
+ ○ Compiling /api/todos ...
+ ✓ Compiled /api/todos in 990ms
+ GET /api/todos 200 in 1761ms
+ GET /api/todos 200 in 864ms
+ HEAD / 200 in 1330ms
+ POST /api/todos 200 in 949ms
+ POST /api/todos 200 in 613ms
+ HEAD / 200 in 199ms
+ HEAD / 200 in 280ms
+ HEAD / 200 in 237ms
+ HEAD / 200 in 217ms
+ HEAD / 200 in 183ms
+ HEAD / 200 in 162ms
+ HEAD / 200 in 442ms
+ HEAD / 200 in 230ms
+ HEAD / 200 in 212ms
+ HEAD / 200 in 282ms
+ HEAD / 200 in 484ms
+ HEAD / 200 in 262ms
+ HEAD / 200 in 595ms
+ HEAD / 200 in 682ms
+ HEAD / 200 in 316ms
+ HEAD / 200 in 416ms
+ HEAD / 200 in 225ms
+ HEAD / 200 in 344ms
+ HEAD / 200 in 341ms
+ HEAD / 200 in 396ms
+ HEAD / 200 in 310ms
+ HEAD / 200 in 404ms
+ HEAD / 200 in 528ms
+ HEAD / 200 in 384ms
+ HEAD / 200 in 415ms
+ HEAD / 200 in 435ms
+[?25h
