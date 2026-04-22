@@ -165,13 +165,28 @@ function seedCategory(name = "2026.04"): Category {
 }
 
 function seedState(categoryId: string): AppState {
+  const now = Date.now();
+  const makeItem = (text: string): TodoItem => ({ id: uid(), text, done: false, createdAt: now });
+  const makePanel = (title: string, color: string, code: string, items: string[]): Panel => ({
+    id: uid(), title, color, createdAt: now, code, kind: "standard", formula: "",
+    categoryIds: categoryId ? [categoryId] : [], categoryAssignedAt: now,
+    items: items.map(makeItem),
+  });
+
   return {
     version: 4,
     appTitle: "Cashflow",
-    motto: "",
+    motto: "Track every won.",
     activeCategoryId: categoryId,
     layout: defaultLayout(),
-    panels: [],
+    panels: [
+      makePanel("💰 Income",    "#4CAF50", "A1", ["Salary: 3,200,000", "Freelance: 800,000", "Dividend: 120,000"]),
+      makePanel("🏠 Housing",   "#2196F3", "A2", ["Rent: 900,000", "Utilities: 85,000", "Internet: 35,000"]),
+      makePanel("🍽️ Food",      "#FF9800", "A3", ["Groceries: 320,000", "Dining out: 180,000", "Coffee: 45,000"]),
+      makePanel("🚌 Transport", "#9C27B0", "A4", ["Subway pass: 55,000", "Taxi: 30,000", "Gas: 80,000"]),
+      makePanel("📚 Growth",    "#00BCD4", "A5", ["Books: 42,000", "Online course: 89,000"]),
+      makePanel("💾 Savings",   "#F44336", "A6", ["Emergency fund: 200,000", "Investment: 300,000"]),
+    ],
   };
 }
 
