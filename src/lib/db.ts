@@ -2,8 +2,10 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const IS_VERCEL = !!process.env.VERCEL;
+const DATA_DIR = IS_VERCEL ? "/tmp/cashflow-data" : path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "cashflow.db");
+const SEED_PATH = path.join(process.cwd(), "data", "seed.json");
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -83,6 +85,40 @@ if (!appStateColumns.has("collapsed_panel_ids")) {
 if (!appStateColumns.has("sidebar_width")) {
   db.exec("ALTER TABLE app_state ADD COLUMN sidebar_width INTEGER NOT NULL DEFAULT 240");
 }
+
+// Seed on fresh DB
+(function seedIfEmpty() {
+  const count = (db.prepare("SELECT COUNT(*) as c FROM categories").get() as { c: number }).c;
+  if (count > 0) return;
+  try {
+    if (!fs.existsSync(SEED_PATH)) return;
+    const seed = JSON.parse(fs.readFileSync(SEED_PATH, "utf-8"));
+
+    const txn = db.transaction(() => {
+      for (const row of seed.app_state) {
+        db.prepare(`INSERT OR IGNORE INTO app_state (mode, app_title, motto, active_category_id, expanded_panel_id, collapsed_panel_ids, sidebar_width, version) VALUES (?,?,?,?,?,?,?,?)`)
+          .run(row.mode, row.app_title, row.motto, row.active_category_id, row.expanded_panel_id, row.collapsed_panel_ids, row.sidebar_width, row.version);
+      }
+      for (const row of seed.categories) {
+        db.prepare(`INSERT OR IGNORE INTO categories (id, mode, name, created_at) VALUES (?,?,?,?)`)
+          .run(row.id, row.mode, row.name, row.created_at);
+      }
+      for (const row of seed.panels) {
+        db.prepare(`INSERT OR IGNORE INTO panels (id, mode, title, color, kind, code, formula, sort_order, created_at) VALUES (?,?,?,?,?,?,?,?,?)`)
+          .run(row.id, row.mode, row.title, row.color, row.kind, row.code, row.formula, row.sort_order, row.created_at);
+      }
+      for (const row of seed.panel_categories) {
+        db.prepare(`INSERT OR IGNORE INTO panel_categories (panel_id, category_id) VALUES (?,?)`)
+          .run(row.panel_id, row.category_id);
+      }
+      for (const row of seed.todo_items) {
+        db.prepare(`INSERT OR IGNORE INTO todo_items (id, panel_id, text, done, sort_order, created_at) VALUES (?,?,?,?,?,?)`)
+          .run(row.id, row.panel_id, row.text, row.done, row.sort_order, row.created_at);
+      }
+    });
+    txn();
+  } catch {}
+})();
 
 export default db;
 

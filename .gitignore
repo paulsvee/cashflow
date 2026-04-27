@@ -11,13 +11,12 @@ node_modules/
 /build
 
 # data / database (personal data - do not commit)
-*.db
-*.sqlite
-*.sqlite3
-data/
-*.db-journal
-*.db-wal
-*.db-shm
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
 
 # env
 .env
