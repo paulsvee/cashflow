@@ -382,7 +382,19 @@ function Sidebar({
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const closeMenu = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(".sidebarItemMenu, .sidebarMoreBtn")) return;
+      setOpenMenuId(null);
+    };
+    document.addEventListener("pointerdown", closeMenu);
+    return () => document.removeEventListener("pointerdown", closeMenu);
+  }, [openMenuId]);
 
   const beginResize = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -438,7 +450,7 @@ function Sidebar({
               className={`sidebarItem${activeCategoryId === cat.id ? " active" : ""}`}
               role="button"
               tabIndex={0}
-              onClick={() => onSelectCategory(cat.id)}
+              onClick={() => { onSelectCategory(cat.id); setOpenMenuId(null); }}
               onDoubleClick={() => { setEditVal(cat.name); setEditingId(cat.id); }}
             >
               <span className="sidebarAvatar" style={{ background: avatarColor(cat.id) }}>{cat.name[0]?.toUpperCase() ?? "?"}</span>
@@ -446,9 +458,26 @@ function Sidebar({
                 <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.name}</div>
                 {latestText(cat.id) && <div style={{ fontSize: 11, opacity: 0.55, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{latestText(cat.id)}</div>}
               </span>
-              {panelCount(cat.id) > 0 && <span className="sidebarCount">{panelCount(cat.id)}</span>}
-              <button className="sidebarDelBtn" style={{ right: 28, opacity: 1 }} onClick={(e) => { e.stopPropagation(); onCopyCategory(cat.id); }}>⧉</button>
-              <button className="sidebarDelBtn" onClick={(e) => { e.stopPropagation(); onDeleteCategory(cat.id); }}>×</button>
+              <span className="sidebarActions">
+                {panelCount(cat.id) > 0 && <span className="sidebarCount">{panelCount(cat.id)}</span>}
+                <button
+                  className="sidebarMoreBtn"
+                  aria-label="List actions"
+                  aria-expanded={openMenuId === cat.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenuId((id) => (id === cat.id ? null : cat.id));
+                  }}
+                >
+                  ⋯
+                </button>
+              </span>
+              {openMenuId === cat.id && (
+                <div className="sidebarItemMenu" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => { onCopyCategory(cat.id); setOpenMenuId(null); }}>복사</button>
+                  <button className="danger" onClick={() => { onDeleteCategory(cat.id); setOpenMenuId(null); }}>삭제</button>
+                </div>
+              )}
             </div>
           )
         ))}
