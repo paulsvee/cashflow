@@ -3,7 +3,7 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 
-type TopNavCurrent = "main" | "dream";
+type TopNavCurrent = "main";
 
 export default function TopNav({
   current,
