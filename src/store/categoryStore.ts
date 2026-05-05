@@ -6,9 +6,8 @@ export type Category = {
   createdAt: number;
 };
 
-// ✅ 메인/드림 각각 다른 키 사용
+// Main category fallback for localStorage-only environments.
 const STORAGE_KEY_MAIN  = "cashflow_categories_main_v1";
-const STORAGE_KEY_DREAM = "cashflow_categories_dream_v1";
 
 function uid() {
   return globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -31,15 +30,15 @@ function parse(raw: string | null): Category[] {
   } catch { return []; }
 }
 
-export function loadCategories(scope: "main" | "dream"): Category[] {
+export function loadCategories(scope: "main"): Category[] {
   if (!canUse()) return [];
-  const key = scope === "main" ? STORAGE_KEY_MAIN : STORAGE_KEY_DREAM;
+  const key = STORAGE_KEY_MAIN;
   return parse(localStorage.getItem(key));
 }
 
-export function saveCategories(cats: Category[], scope: "main" | "dream") {
+export function saveCategories(cats: Category[], scope: "main") {
   if (!canUse()) return;
-  const key = scope === "main" ? STORAGE_KEY_MAIN : STORAGE_KEY_DREAM;
+  const key = STORAGE_KEY_MAIN;
   try { localStorage.setItem(key, JSON.stringify(cats)); } catch {}
 }
 

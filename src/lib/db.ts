@@ -161,7 +161,7 @@ export type AppState = {
   panels: Panel[];
 };
 
-export function readState(mode: "main" | "dream"): { state: AppState | null; categories: Category[] } {
+export function readState(mode: "main"): { state: AppState | null; categories: Category[] } {
   const row = db.prepare("SELECT * FROM app_state WHERE mode = ?").get(mode) as
     | {
         app_title: string;
@@ -209,7 +209,7 @@ export function readState(mode: "main" | "dream"): { state: AppState | null; cat
   };
 }
 
-export function readPanels(mode: "main" | "dream"): Panel[] {
+export function readPanels(mode: "main"): Panel[] {
   const panelRows = db.prepare("SELECT * FROM panels WHERE mode = ? ORDER BY sort_order ASC, created_at ASC").all(mode) as {
     id: string;
     title: string;
@@ -255,7 +255,7 @@ export function readPanels(mode: "main" | "dream"): Panel[] {
   });
 }
 
-export function readCategories(mode: "main" | "dream"): Category[] {
+export function readCategories(mode: "main"): Category[] {
   return (
     db.prepare("SELECT * FROM categories WHERE mode = ? ORDER BY created_at ASC").all(mode) as {
       id: string;
@@ -265,7 +265,7 @@ export function readCategories(mode: "main" | "dream"): Category[] {
   ).map((c) => ({ id: c.id, name: c.name, createdAt: c.created_at }));
 }
 
-export function writeState(mode: "main" | "dream", state: AppState, categories: Category[]): void {
+export function writeState(mode: "main", state: AppState, categories: Category[]): void {
   const layout = state.layout ?? {
     expandedPanelIdsByCategory: {},
     collapsedPanelIds: [],

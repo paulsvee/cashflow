@@ -8,6 +8,9 @@ const AVATAR_COLORS = ["#4a90d9", "#5c6bc0", "#26a69a", "#66bb6a", "#ef5350", "#
 const STORAGE_KEY = "cashflow_main_v1";
 const UNDO_KEY = "cashflow_undo_v1";
 const MAX_UNDO = 20;
+const SIDEBAR_MIN_WIDTH = 180;
+const SIDEBAR_MAX_WIDTH = 420;
+const SIDEBAR_DEFAULT_WIDTH = 240;
 
 type TodoItem = {
   id: string;
@@ -53,6 +56,8 @@ const formatStamp = (ms: number) => {
 const formatNumber = (n: number) => n.toLocaleString("ko-KR");
 const clampText = (s: string) => s.replace(/\s+/g, " ").trim();
 const normalizePanelCode = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+const clampSidebarWidth = (width: number) =>
+  Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(width)));
 const formulaTokenPattern = "[A-Z][A-Z0-9]*|\\d[\\d,]*";
 const inlineFormulaPattern = new RegExp(
   `^([-+]?\\s*(?:${formulaTokenPattern})(?:\\s*[-+]\\s*(?:${formulaTokenPattern}))*)(?:\\s*=\\s*.*|\\s[a-zA-Z0-9 ]*)?$`,
@@ -85,7 +90,7 @@ function useColumnCount(): number {
 const defaultLayout = () => ({
   expandedPanelIdsByCategory: {} as Record<string, string[]>,
   collapsedPanelIds: [] as string[],
-  sidebarWidth: 240,
+  sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
 });
 
 const extractPanelSum = (items: TodoItem[]): number | null => {
@@ -243,7 +248,7 @@ function safeParseState(raw: string | null, categories: Category[]): AppState | 
         collapsedPanelIds: Array.isArray(data?.layout?.collapsedPanelIds)
           ? data.layout.collapsedPanelIds.filter((id: unknown): id is string => typeof id === "string")
           : [],
-        sidebarWidth: typeof data?.layout?.sidebarWidth === "number" ? data.layout.sidebarWidth : 240,
+        sidebarWidth: typeof data?.layout?.sidebarWidth === "number" ? clampSidebarWidth(data.layout.sidebarWidth) : SIDEBAR_DEFAULT_WIDTH,
       },
       panels: fixedPanels,
     };
@@ -357,6 +362,8 @@ function Sidebar({
   onCopyCategory,
   onRenameCategory,
   onClose,
+  sidebarWidth,
+  onResizeSidebar,
 }: {
   categories: Category[];
   activeCategoryId: string;
@@ -369,15 +376,45 @@ function Sidebar({
   onCopyCategory: (id: string) => void;
   onRenameCategory: (id: string, name: string) => void;
   onClose: () => void;
+  sidebarWidth: number;
+  onResizeSidebar: (width: number) => void;
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
+  const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
+
+  const beginResize = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    resizeStartRef.current = { x: e.clientX, width: sidebarWidth };
+    document.body.classList.add("sidebarResizing");
+
+    const onPointerMove = (event: PointerEvent) => {
+      const start = resizeStartRef.current;
+      if (!start) return;
+      onResizeSidebar(clampSidebarWidth(start.width + event.clientX - start.x));
+    };
+
+    const endResize = () => {
+      resizeStartRef.current = null;
+      document.body.classList.remove("sidebarResizing");
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", endResize);
+      window.removeEventListener("pointercancel", endResize);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", endResize);
+    window.addEventListener("pointercancel", endResize);
+  }, [onResizeSidebar, sidebarWidth]);
 
   return (
     <>
       {sidebarOpen && <div className="sidebarDim" onClick={onClose} />}
-      <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
+      <div className={`sidebar${sidebarOpen ? " open" : ""}`} style={{ "--sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}>
         {categories.map((cat) => (
           editingId === cat.id ? (
             <input
@@ -416,6 +453,13 @@ function Sidebar({
           )
         ))}
         <button className="sidebarAddBtn" onClick={() => setShowCreate(true)}>+ 리스트 추가</button>
+        <div
+          className="sidebarResizeHandle"
+          role="separator"
+          aria-label="Resize sidebar"
+          aria-orientation="vertical"
+          onPointerDown={beginResize}
+        />
       </div>
       {showCreate && <CategoryModal onConfirm={(name) => { onCreateCategory(name); setShowCreate(false); }} onCancel={() => setShowCreate(false)} />}
     </>
@@ -456,6 +500,7 @@ export default function HomePage() {
   const composingItemIdRef = useRef<string | null>(null);
   const composingPanelIdRef = useRef<string | null>(null);
   const colCount = useColumnCount();
+  const sidebarWidth = clampSidebarWidth(state.layout.sidebarWidth ?? SIDEBAR_DEFAULT_WIDTH);
 
   const pushUndo = useCallback((next: AppState) => {
     setUndo((prev) => [state, ...prev].slice(0, MAX_UNDO));
@@ -812,6 +857,13 @@ export default function HomePage() {
           onCopyCategory={copyCategory}
           onRenameCategory={renameCategory}
           onClose={() => setSidebarOpen(false)}
+          sidebarWidth={sidebarWidth}
+          onResizeSidebar={(width) => {
+            setState((prev) => ({
+              ...prev,
+              layout: { ...prev.layout, sidebarWidth: clampSidebarWidth(width) },
+            }));
+          }}
         />
 
         <div className="mainContent">
